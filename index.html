@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte Puntos de Venta — Goodtrade</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 2rem; }
+  .dash { max-width: 1100px; margin: 0 auto; }
+  .header { margin-bottom: 1.5rem; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #1a1a18; }
+  .header p { font-size: 13px; color: #5f5e5a; margin-top: 4px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; background: #fff; padding: 6px; border-radius: 10px; border: 0.5px solid #d3d1c7; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; color: #5f5e5a; border: none; background: none; }
+  .tab.active { background: #003863; color: #fff; }
+  .filter-row { display: flex; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; background: #fff; padding: 12px 16px; border-radius: 10px; border: 0.5px solid #d3d1c7; }
+  .filter-row label { font-size: 13px; color: #5f5e5a; font-weight: 500; }
+  select { font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 0.5px solid #b4b2a9; background: #f5f5f3; color: #1a1a18; cursor: pointer; outline: none; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .kpi { background: #fff; border-radius: 10px; padding: 1rem 1.25rem; border: 0.5px solid #d3d1c7; }
+  .kpi-label { font-size: 12px; color: #888780; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a18; }
+  .kpi-sub { font-size: 12px; color: #888780; margin-top: 4px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .chart-box { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; padding: 1.2rem; }
+  .chart-box h3 { font-size: 13px; font-weight: 500; color: #5f5e5a; margin-bottom: 10px; }
+  .chart-full { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; }
+  .chart-full h3 { font-size: 13px; font-weight: 500; color: #5f5e5a; margin-bottom: 10px; }
+  .section-title { font-size: 12px; font-weight: 600; color: #888780; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .table-box { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f5f5f3; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; color: #888780; border-bottom: 0.5px solid #d3d1c7; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 10px 14px; border-bottom: 0.5px solid #f1efe8; color: #1a1a18; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f5f5f3; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #EAF3DE; color: #3B6D11; }
+  .badge-amber { background: #FAEEDA; color: #854F0B; }
+  .badge-red { background: #FCEBEB; color: #A32D2D; }
+  .badge-blue { background: #E8EEF7; color: #003863; }
+  .footer { text-align: center; font-size: 12px; color: #b4b2a9; margin-top: 2rem; }
+  @media (max-width: 640px) { body { padding: 1rem; } .chart-row { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="header">
+    <h1>Reporte Puntos de Venta — Goodtrade</h1>
+    <p>Últimas 4 semanas · 13 Abril – 10 Mayo 2026 · 4 puntos de venta</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setView('semana')">Por semana</button>
+    <button class="tab" onclick="setView('punto')">Por punto de venta</button>
+    <button class="tab" onclick="setView('comp')">Comparativa</button>
+  </div>
+
+  <!-- POR SEMANA -->
+  <div id="viewSemana">
+    <div class="filter-row">
+      <label>Semana:</label>
+      <select id="sf_sem" onchange="updateSemana()"><option value="all">Todas</option></select>
+      <label>Punto:</label>
+      <select id="sf_punto" onchange="updateSemana()"><option value="all">Todos</option></select>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Inversión total</div><div class="kpi-value" id="s1">—</div><div class="kpi-sub">COP</div></div>
+      <div class="kpi"><div class="kpi-label">Mensajes recibidos</div><div class="kpi-value" id="s2">—</div><div class="kpi-sub">WA recibidos</div></div>
+      <div class="kpi"><div class="kpi-label">Inv. en WA</div><div class="kpi-value" id="s5">—</div><div class="kpi-sub">COP</div></div>
+      <div class="kpi"><div class="kpi-label">Costo / mensaje</div><div class="kpi-value" id="s3">—</div><div class="kpi-sub">COP por mensaje</div></div>
+      <div class="kpi"><div class="kpi-label">% inv. en WA</div><div class="kpi-value" id="s4">—</div><div class="kpi-sub">inv. WA / inv. total</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>Mensajes por punto de venta</h3><div style="position:relative;height:260px;"><canvas id="s_msg"></canvas></div></div>
+      <div class="chart-box"><h3>Inversión WA por punto de venta</h3><div style="position:relative;height:260px;"><canvas id="s_inv"></canvas></div></div>
+    </div>
+    <div class="chart-full"><h3>Evolución semanal de mensajes por punto</h3><div style="position:relative;height:300px;"><canvas id="s_line"></canvas></div></div>
+    <div class="section-title">Detalle por semana</div>
+    <div class="table-box"><table><thead><tr><th>Punto de venta</th><th>Semana</th><th>Inv. real</th><th>Inv. WA</th><th>Mensajes</th><th>Costo/msg</th><th>% WA</th></tr></thead><tbody id="s_tbl"></tbody></table></div>
+  </div>
+
+  <!-- POR PUNTO -->
+  <div id="viewPunto" style="display:none;">
+    <div class="filter-row">
+      <label>Punto de venta:</label>
+      <select id="p_punto" onchange="updatePunto()"><option value="all">Todos</option></select>
+    </div>
+    <div class="kpi-grid" id="p_kpis"></div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>Mensajes por semana</h3><div style="position:relative;height:260px;"><canvas id="p_msg"></canvas></div></div>
+      <div class="chart-box"><h3>Costo por mensaje por semana</h3><div style="position:relative;height:260px;"><canvas id="p_costo"></canvas></div></div>
+    </div>
+    <div class="section-title">Resumen 4 semanas</div>
+    <div class="table-box"><table><thead><tr><th>Punto de venta</th><th>Total inv.</th><th>Total WA</th><th>Total msgs</th><th>Costo/msg prom.</th><th>% WA</th></tr></thead><tbody id="p_tbl"></tbody></table></div>
+  </div>
+
+  <!-- COMPARATIVA -->
+  <div id="viewComp" style="display:none;">
+    <div class="filter-row">
+      <label>Semanas:</label>
+      <div id="comp_sems" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="chart-full"><h3>Mensajes por punto — comparativa semanal</h3><div style="position:relative;height:320px;"><canvas id="c_msg"></canvas></div></div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>Costo / msg por punto</h3><div style="position:relative;height:240px;"><canvas id="c_costo"></canvas></div></div>
+      <div class="chart-box"><h3>Inversión WA por punto</h3><div style="position:relative;height:240px;"><canvas id="c_inv"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="footer">Reporte Puntos de Venta Goodtrade · 13 Abril – 10 Mayo 2026</div>
+</div>
+
+<script>
+// Solo los 4 puntos de venta, últimas 4 semanas
+const RAW = [
+  {sem:"13–19 Abr", punto:"Goodtrade 1a Mayo", inv:100000, invWA:73000,  msg:126, costo:579.37},
+  {sem:"20–26 Abr", punto:"Goodtrade 1a Mayo", inv:100000, invWA:71393,  msg:140, costo:509.95},
+  {sem:"27 Abr–3 May",punto:"Goodtrade 1a Mayo",inv:100000,invWA:102518, msg:113, costo:907.24},
+  {sem:"4–10 May",  punto:"Goodtrade 1a Mayo", inv:100000, invWA:156212, msg:135, costo:1157.13},
+
+  {sem:"13–19 Abr", punto:"Punto 80",          inv:100000, invWA:100000, msg:151, costo:662.25},
+  {sem:"20–26 Abr", punto:"Punto 80",          inv:100000, invWA:49508,  msg:165, costo:300.05},
+  {sem:"27 Abr–3 May",punto:"Punto 80",        inv:100000, invWA:87976,  msg:124, costo:709.48},
+  {sem:"4–10 May",  punto:"Punto 80",          inv:100000, invWA:83719,  msg:129, costo:648.98},
+
+  {sem:"13–19 Abr", punto:"Goodtrade C. Jardín",inv:100000,invWA:116656, msg:134, costo:870.57},
+  {sem:"20–26 Abr", punto:"Goodtrade C. Jardín",inv:100000,invWA:100000, msg:102, costo:980.39},
+  {sem:"27 Abr–3 May",punto:"Goodtrade C. Jardín",inv:100000,invWA:100000,msg:116,costo:862.07},
+  {sem:"4–10 May",  punto:"Goodtrade C. Jardín",inv:100000,invWA:99981,  msg:110, costo:908.92},
+
+  {sem:"13–19 Abr", punto:"Goodtrade Sta. Lucía",inv:100000,invWA:100000,msg:159, costo:628.93},
+  {sem:"20–26 Abr", punto:"Goodtrade Sta. Lucía",inv:100000,invWA:99991, msg:114, costo:877.11},
+  {sem:"27 Abr–3 May",punto:"Goodtrade Sta. Lucía",inv:100000,invWA:100000,msg:100,costo:1000},
+  {sem:"4–10 May",  punto:"Goodtrade Sta. Lucía",inv:100000,invWA:99973, msg:122, costo:819.45},
+];
+
+const SEMANAS = [...new Set(RAW.map(d=>d.sem))];
+const PUNTOS  = [...new Set(RAW.map(d=>d.punto))];
+const COLORS  = ["#003863","#D61016","#0F7B6C","#7B3F91"];
+
+function fmt(n){return Math.round(n).toLocaleString('es-CO');}
+function bdg(p){
+  if(p>=100) return `<span class="badge badge-green">${p.toFixed(0)}%</span>`;
+  if(p>=75)  return `<span class="badge badge-amber">${p.toFixed(0)}%</span>`;
+  return `<span class="badge badge-red">${p.toFixed(0)}%</span>`;
+}
+
+let charts={};
+function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+
+// Init selects
+['sf_punto','p_punto'].forEach(id=>{
+  const s=document.getElementById(id);
+  PUNTOS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;s.appendChild(o);});
+});
+SEMANAS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;document.getElementById('sf_sem').appendChild(o);});
+
+// Comp checkboxes
+const compDiv=document.getElementById('comp_sems');
+SEMANAS.forEach((s,i)=>{
+  const lbl=document.createElement('label');
+  lbl.style.cssText='display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f5f5f3;border:0.5px solid #b4b2a9;border-radius:6px;padding:5px 10px;';
+  lbl.innerHTML=`<input type="checkbox" value="${s}" checked onchange="updateComp()"> ${s}`;
+  compDiv.appendChild(lbl);
+});
+
+function setView(v){
+  ['Semana','Punto','Comp'].forEach(n=>document.getElementById('view'+n).style.display='none');
+  document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).style.display='block';
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['semana','punto','comp'][i]===v));
+  if(v==='semana') updateSemana();
+  else if(v==='punto') updatePunto();
+  else updateComp();
+}
+
+function updateSemana(){
+  const sem=document.getElementById('sf_sem').value;
+  const punto=document.getElementById('sf_punto').value;
+  const data=RAW.filter(d=>(sem==='all'||d.sem===sem)&&(punto==='all'||d.punto===punto));
+  const ti=data.reduce((s,d)=>s+d.inv,0);
+  const tw=data.reduce((s,d)=>s+d.invWA,0);
+  const tm=data.reduce((s,d)=>s+d.msg,0);
+  document.getElementById('s1').textContent='$'+fmt(ti);
+  document.getElementById('s2').textContent=fmt(tm);
+  document.getElementById('s5').textContent='$'+fmt(tw);
+  document.getElementById('s3').textContent='$'+fmt(tm>0?ti/tm:0);
+  document.getElementById('s4').textContent=(ti>0?tw/ti*100:0).toFixed(1)+'%';
+
+  const byP={};
+  data.forEach(d=>{if(!byP[d.punto])byP[d.punto]={inv:0,wa:0,msg:0};byP[d.punto].inv+=d.inv;byP[d.punto].wa+=d.invWA;byP[d.punto].msg+=d.msg;});
+  const pL=Object.keys(byP);
+  const pColors=pL.map(p=>COLORS[PUNTOS.indexOf(p)%COLORS.length]);
+
+  mkChart('s_msg',{type:'bar',data:{labels:pL,datasets:[{label:'Msgs',data:pL.map(p=>byP[p].msg),backgroundColor:pColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true}}}});
+  mkChart('s_inv',{type:'bar',data:{labels:pL,datasets:[{label:'Inv WA',data:pL.map(p=>byP[p].wa),backgroundColor:pColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}}},y:{ticks:{callback:v=>'$'+fmt(v)}}}}});
+
+  // Line chart evolution
+  const datasets=PUNTOS.map((p,i)=>({
+    label:p, borderColor:COLORS[i], backgroundColor:COLORS[i]+'22',
+    data:SEMANAS.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?d.msg:0;}),
+    tension:0.3, fill:false, pointRadius:5
+  }));
+  mkChart('s_line',{type:'line',data:{labels:SEMANAS,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{y:{beginAtZero:true}}}});
+
+  const tb=document.getElementById('s_tbl');tb.innerHTML='';
+  data.forEach(d=>{
+    const pwa=d.inv>0?d.invWA/d.inv*100:0;
+    tb.innerHTML+=`<tr><td><strong>${d.punto}</strong></td><td style="color:#888780">${d.sem}</td><td>$${fmt(d.inv)}</td><td>$${fmt(d.invWA)}</td><td>${fmt(d.msg)}</td><td>$${fmt(d.costo)}</td><td>${bdg(pwa)}</td></tr>`;
+  });
+}
+
+function updatePunto(){
+  const punto=document.getElementById('p_punto').value;
+  const data=RAW.filter(d=>punto==='all'||d.punto===punto);
+  const kpiEl=document.getElementById('p_kpis');kpiEl.innerHTML='';
+  const puntos=punto==='all'?PUNTOS:[punto];
+  puntos.forEach((p,i)=>{
+    const pd=RAW.filter(d=>d.punto===p);
+    const inv=pd.reduce((s,d)=>s+d.inv,0);
+    const msg=pd.reduce((s,d)=>s+d.msg,0);
+    kpiEl.innerHTML+=`<div class="kpi"><div class="kpi-label" style="color:${COLORS[i%4]};font-weight:600">${p}</div><div class="kpi-value">$${fmt(inv)}</div><div class="kpi-sub">${fmt(msg)} msgs · $${fmt(msg>0?inv/msg:0)}/msg</div></div>`;
+  });
+
+  const datasets_msg=puntos.map((p,i)=>({
+    label:p,borderColor:COLORS[i%4],backgroundColor:COLORS[i%4]+'33',
+    data:SEMANAS.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?d.msg:0;}),
+    tension:0.3,fill:true,pointRadius:5
+  }));
+  mkChart('p_msg',{type:'line',data:{labels:SEMANAS,datasets:datasets_msg},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{y:{beginAtZero:true}}}});
+
+  const datasets_costo=puntos.map((p,i)=>({
+    label:p,borderColor:COLORS[i%4],backgroundColor:'transparent',
+    data:SEMANAS.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?Math.round(d.costo):0;}),
+    tension:0.3,pointRadius:5
+  }));
+  mkChart('p_costo',{type:'line',data:{labels:SEMANAS,datasets:datasets_costo},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>'$'+fmt(v)}}}}});
+
+  const tb=document.getElementById('p_tbl');tb.innerHTML='';
+  puntos.forEach((p,i)=>{
+    const pd=RAW.filter(d=>d.punto===p);
+    const inv=pd.reduce((s,d)=>s+d.inv,0);
+    const wa=pd.reduce((s,d)=>s+d.invWA,0);
+    const msg=pd.reduce((s,d)=>s+d.msg,0);
+    const pwa=inv>0?wa/inv*100:0;
+    tb.innerHTML+=`<tr><td><strong style="color:${COLORS[i%4]}">${p}</strong></td><td>$${fmt(inv)}</td><td>$${fmt(wa)}</td><td>${fmt(msg)}</td><td>$${fmt(msg>0?inv/msg:0)}</td><td>${bdg(pwa)}</td></tr>`;
+  });
+}
+
+function updateComp(){
+  const sems=[...document.querySelectorAll('#comp_sems input:checked')].map(c=>c.value);
+  const colors=PUNTOS.map((_,i)=>COLORS[i%COLORS.length]);
+  const datasets_msg=PUNTOS.map((p,i)=>({
+    label:p,backgroundColor:COLORS[i%4],borderRadius:3,
+    data:sems.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?d.msg:0;})
+  }));
+  mkChart('c_msg',{type:'bar',data:{labels:sems,datasets:datasets_msg},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true}}}});
+
+  const datasets_costo=PUNTOS.map((p,i)=>({
+    label:p,borderColor:COLORS[i%4],backgroundColor:'transparent',
+    data:sems.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?Math.round(d.costo):0;}),
+    tension:0.3,pointRadius:5
+  }));
+  mkChart('c_costo',{type:'line',data:{labels:sems,datasets:datasets_costo},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>'$'+fmt(v)}}}}});
+
+  const datasets_inv=PUNTOS.map((p,i)=>({
+    label:p,backgroundColor:COLORS[i%4],borderRadius:3,
+    data:sems.map(s=>{const d=RAW.find(r=>r.sem===s&&r.punto===p);return d?d.invWA:0;})
+  }));
+  mkChart('c_inv',{type:'bar',data:{labels:sems,datasets:datasets_inv},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>'$'+fmt(v)}}}}});
+}
+
+updateSemana();
+</script>
+</body>
+</html>
