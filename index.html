@@ -41,14 +41,23 @@
   .badge-red { background: #FCEBEB; color: #A32D2D; }
   .badge-blue { background: #E8EEF7; color: #003863; }
   .footer { text-align: center; font-size: 12px; color: #b4b2a9; margin-top: 2rem; }
-  @media (max-width: 640px) { body { padding: 1rem; } .chart-row { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: 1fr 1fr; } }
+  
+  @media (max-width: 768px) {
+    .dash { min-width: 900px; }
+    body { padding: 1rem; overflow-x: auto; }
+    .chart-row { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    table { min-width: 700px; }
+    .table-box { overflow-x: auto; }
+  }
+ .chart-row { grid-template-columns: 1fr; } .kpi-grid { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
-<body>
+<body style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
 <div class="dash">
   <div class="header">
     <h1>Reporte Puntos de Venta — Goodtrade</h1>
-    <p>Últimas 4 semanas · 13 Abril – 10 Mayo 2026 · 4 puntos de venta</p>
+    <p>Últimas 4 semanas · 13 Abril – 24 Mayo 2026 · 4 puntos de venta</p>
   </div>
 
   <div class="tabs">
@@ -109,7 +118,7 @@
     </div>
   </div>
 
-  <div class="footer">Reporte Puntos de Venta Goodtrade · 13 Abril – 10 Mayo 2026</div>
+  <div class="footer">Reporte Puntos de Venta Goodtrade · 13 Abril – 24 Mayo 2026</div>
 </div>
 
 <script>
@@ -134,6 +143,14 @@ const RAW = [
   {sem:"20–26 Abr", punto:"Goodtrade Sta. Lucía",inv:100000,invWA:99991, msg:114, costo:877.11},
   {sem:"27 Abr–3 May",punto:"Goodtrade Sta. Lucía",inv:100000,invWA:100000,msg:100,costo:1000},
   {sem:"4–10 May",  punto:"Goodtrade Sta. Lucía",inv:100000,invWA:99973, msg:122, costo:819.45},
+  {sem:"11–17 May", punto:"Goodtrade 1a Mayo", inv:100000, invWA:111794, msg:128, costo:873.39},
+  {sem:"11–17 May", punto:"Punto 80",          inv:100000, invWA:100000, msg:140, costo:714.29},
+  {sem:"11–17 May", punto:"Goodtrade C. Jardín",inv:100000,invWA:99981,  msg:110, costo:908.92},
+  {sem:"11–17 May", punto:"Goodtrade Sta. Lucía",inv:100000,invWA:99990, msg:118, costo:847.37},
+  {sem:"18–24 May", punto:"Goodtrade 1a Mayo", inv:100000, invWA:118163, msg:136, costo:868.85},
+  {sem:"18–24 May", punto:"Punto 80",          inv:100000, invWA:99800,  msg:136, costo:733.82},
+  {sem:"18–24 May", punto:"Goodtrade C. Jardín",inv:100000,invWA:100167, msg:85,  costo:1178.44},
+  {sem:"18–24 May", punto:"Goodtrade Sta. Lucía",inv:100000,invWA:120315,msg:135, costo:891.22},
 ];
 
 const SEMANAS = [...new Set(RAW.map(d=>d.sem))];
