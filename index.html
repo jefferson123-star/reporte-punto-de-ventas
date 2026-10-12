@@ -57,7 +57,7 @@
 <div class="dash">
   <div class="header">
     <h1>Reporte Puntos de Venta — Goodtrade</h1>
-    <p>Últimas 4 semanas · 13 Abril – 13 Septiembre 2026 · 4 puntos de venta</p>
+    <p>Últimas 4 semanas · 13 Abril – 11 Octubre 2026 · 4 puntos de venta</p>
   </div>
 
   <div class="tabs">
@@ -69,6 +69,8 @@
   <!-- POR SEMANA -->
   <div id="viewSemana">
     <div class="filter-row">
+      <label>Mes:</label>
+      <select id="sf_mes" onchange="updateMesFiltro()"><option value="all">Todos</option></select>
       <label>Semana:</label>
       <select id="sf_sem" onchange="updateSemana()"><option value="all">Todas</option></select>
       <label>Punto:</label>
@@ -93,6 +95,8 @@
   <!-- POR PUNTO -->
   <div id="viewPunto" style="display:none;">
     <div class="filter-row">
+      <label>Mes:</label>
+      <select id="p_mes" onchange="updatePunto()"><option value="all">Todos</option></select>
       <label>Punto de venta:</label>
       <select id="p_punto" onchange="updatePunto()"><option value="all">Todos</option></select>
     </div>
@@ -118,7 +122,7 @@
     </div>
   </div>
 
-  <div class="footer">Reporte Puntos de Venta Goodtrade · 13 Abril – 13 Septiembre 2026</div>
+  <div class="footer">Reporte Puntos de Venta Goodtrade · 13 Abril – 11 Octubre 2026</div>
 </div>
 
 <script>
@@ -215,9 +219,35 @@ const RAW = [
   {sem:"7–13 Sep",     punto:"Punto 80",           inv:100000, invWA:79000,  msg:101, costo:782.18},
   {sem:"7–13 Sep",     punto:"Goodtrade C. Jardín",inv:100000, invWA:100003, msg:111, costo:900.93},
   {sem:"7–13 Sep",     punto:"Goodtrade Sta. Lucía",inv:100000,invWA:97907,  msg:90,  costo:1087.86},
+  {sem:"14–20 Sep", punto:"Goodtrade 1a Mayo",   inv:100000, invWA:100000, msg:105, costo:952.38},
+  {sem:"14–20 Sep", punto:"Punto 80",            inv:100000, invWA:133358, msg:238, costo:560.33},
+  {sem:"14–20 Sep", punto:"Goodtrade C. Jardín", inv:100000, invWA:63153,  msg:81,  costo:779.67},
+  {sem:"14–20 Sep", punto:"Goodtrade Sta. Lucía",inv:100000, invWA:95572,  msg:73,  costo:1309.21},
+
+  // 21-27 SEPTIEMBRE
+  {sem:"21–27 Sep", punto:"Goodtrade 1a Mayo",   inv:100000, invWA:97400,  msg:98,  costo:993.88},
+  {sem:"21–27 Sep", punto:"Punto 80",            inv:100000, invWA:263280, msg:258, costo:1020.47},
+  {sem:"21–27 Sep", punto:"Goodtrade C. Jardín", inv:100000, invWA:104293, msg:91,  costo:1146.08},
+  {sem:"21–27 Sep", punto:"Goodtrade Sta. Lucía",inv:100000, invWA:97140,  msg:98,  costo:991.22},
+
+  // 28 SEP - 4 OCT
+  {sem:"28 Sep–4 Oct", punto:"Goodtrade 1a Mayo",   inv:100000, invWA:99057,  msg:95,  costo:1042.71},
+  {sem:"28 Sep–4 Oct", punto:"Punto 80",            inv:100000, invWA:99904,  msg:106, costo:942.49},
+  {sem:"28 Sep–4 Oct", punto:"Goodtrade C. Jardín", inv:100000, invWA:95707,  msg:98,  costo:976.60},
+  {sem:"28 Sep–4 Oct", punto:"Goodtrade Sta. Lucía",inv:100000, invWA:99053,  msg:95,  costo:1042.66},
+
+  // 5-11 OCTUBRE
+  {sem:"5–11 Oct", punto:"Goodtrade 1a Mayo",   inv:100000, invWA:68741,  msg:131, costo:524.74},
+  {sem:"5–11 Oct", punto:"Punto 80",            inv:100000, invWA:99986,  msg:186, costo:537.56},
+  {sem:"5–11 Oct", punto:"Goodtrade C. Jardín", inv:100000, invWA:100000, msg:128, costo:781.25},
+  {sem:"5–11 Oct", punto:"Goodtrade Sta. Lucía",inv:100000, invWA:99784,  msg:89,  costo:1121.17},
 ];
 
 const SEMANAS = [...new Set(RAW.map(d=>d.sem))];
+const SEM_MES={"13–19 Abr":"abril","20–26 Abr":"abril","27 Abr–3 May":"mayo","4–10 May":"mayo","11–17 May":"mayo","18–24 May":"mayo","25–31 May":"mayo","1–7 Jun":"junio","8–14 Jun":"junio","15–21 Jun":"junio","22–28 Jun":"junio","29 Jun–5 Jul":"julio","6–12 Jul":"julio","13–19 Jul":"julio","20–26 Jul":"julio","27 Jul–2 Ago":"agosto","3–9 Ago":"agosto","10–16 Ago":"agosto","17–23 Ago":"agosto","24–30 Ago":"agosto","31 Ago–6 Sep":"septiembre","7–13 Sep":"septiembre","14–20 Sep":"septiembre","21–27 Sep":"septiembre","28 Sep–4 Oct":"octubre","5–11 Oct":"octubre"};
+RAW.forEach(d=>{d.mes=SEM_MES[d.sem]||'otro';});
+const MESES_PV=[...new Set(RAW.map(d=>d.mes))];
+
 const PUNTOS  = [...new Set(RAW.map(d=>d.punto))];
 const COLORS  = ["#003863","#D61016","#0F7B6C","#7B3F91"];
 
@@ -232,11 +262,27 @@ let charts={};
 function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 
 // Init selects
+function initMesSelect(id, onChange){
+  const s=document.getElementById(id);if(!s)return;
+  MESES_PV.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m.charAt(0).toUpperCase()+m.slice(1);s.appendChild(o);});
+  s.onchange=onChange;
+}
+initMesSelect('sf_mes', updateMesFiltro);
+initMesSelect('p_mes', updatePunto);
+
 ['sf_punto','p_punto'].forEach(id=>{
   const s=document.getElementById(id);
   PUNTOS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;s.appendChild(o);});
 });
-SEMANAS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;document.getElementById('sf_sem').appendChild(o);});
+function buildSemSelect(mes){
+  const s=document.getElementById('sf_sem');
+  const cur=s.value;
+  s.innerHTML='<option value="all">Todas</option>';
+  SEMANAS.filter(sem=>mes==='all'||SEM_MES[sem]===mes).forEach(sem=>{const o=document.createElement('option');o.value=sem;o.textContent=sem;s.appendChild(o);});
+  s.value=cur&&[...s.options].some(o=>o.value===cur)?cur:'all';
+}
+buildSemSelect('all');
+function updateMesFiltro(){buildSemSelect(document.getElementById('sf_mes').value);updateSemana();}
 
 // Comp checkboxes
 const compDiv=document.getElementById('comp_sems');
@@ -257,9 +303,10 @@ function setView(v){
 }
 
 function updateSemana(){
+  const mesF=document.getElementById('sf_mes')?document.getElementById('sf_mes').value:'all';
   const sem=document.getElementById('sf_sem').value;
   const punto=document.getElementById('sf_punto').value;
-  const data=RAW.filter(d=>(sem==='all'||d.sem===sem)&&(punto==='all'||d.punto===punto));
+  const data=RAW.filter(d=>(mesF==='all'||d.mes===mesF)&&(sem==='all'||d.sem===sem)&&(punto==='all'||d.punto===punto));
   const ti=data.reduce((s,d)=>s+d.inv,0);
   const tw=data.reduce((s,d)=>s+d.invWA,0);
   const tm=data.reduce((s,d)=>s+d.msg,0);
